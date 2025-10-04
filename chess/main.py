@@ -10,7 +10,7 @@
 import sys
 import pygame as p
 from engine import GameState, Move
-from chessAi import findRandomMoves, findBestMove
+from chessAi import findRandomMoves, findBestMove, returnBestMove
 from multiprocessing import Process, Queue
 
 # Initialize the mixer
@@ -188,61 +188,55 @@ def main():
     while running:
         humanTurn = (gs.whiteToMove and playerWhiteHuman) or (
             not gs.whiteToMove and playerBlackHuman)
+        if not gameOver:  # allow mouse handling only if its not game over
+                location = p.mouse.get_pos()
+                col = location[0]//SQ_SIZE
+                row = location[1]//SQ_SIZE
+                # if user clicked on same square twice or user click outside board
+                if squareSelected == (row, col) or col >= 8:
+                    squareSelected = ()  # deselect
+                    playerClicks = []  # clear player clicks
+                else:
+                    squareSelected = (row, col)
+                    # append player both clicks (place and destination)
+                    playerClicks.append(squareSelected)
+                # after second click (at destination)
+                if humanTurn:
+                    # user generated a move
+                    move = returnBestMove(gs, validMoves)
+                    # Check if a piece is captured at the destination square
+                    # print(gs.board[validMoves[i].endRow][validMoves[i].endCol])
+                    if gs.board[move.endRow][move.endCol] != '--':
+                        pieceCaptured = True
+                    gs.makeMove(move)
+                    if (move.isPawnPromotion):
+                        # Show pawn promotion popup and get the selected piece
+                        # promotion_choice = pawnPromotionPopup(screen, gs)
+                        promotion_choice = "Q"
+                        # Set the promoted piece on the board
+                        gs.board[move.endRow][move.endCol] = move.pieceMoved[0] + \
+                            promotion_choice
+                        promote_sound.play()
+                        pieceCaptured = False
+                    # add sound for human move
+                    if (pieceCaptured or move.isEnpassantMove):
+                        # Play capture sound
+                        capture_sound.play()
+                        # print("capture sound")
+                    elif not move.isPawnPromotion:
+                        # Play move sound
+                        move_sound.play()
+                        # print("move sound")
+                    pieceCaptured = False
+                    moveMade = True
+                    animate = True
+                    squareSelected = ()
+                    playerClicks = []
+                    if not moveMade:
+                        playerClicks = [squareSelected]
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
-            # Mouse Handler
-            elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:  # allow mouse handling only if its not game over
-                    location = p.mouse.get_pos()
-                    col = location[0]//SQ_SIZE
-                    row = location[1]//SQ_SIZE
-                    # if user clicked on same square twice or user click outside board
-                    if squareSelected == (row, col) or col >= 8:
-                        squareSelected = ()  # deselect
-                        playerClicks = []  # clear player clicks
-                    else:
-                        squareSelected = (row, col)
-                        # append player both clicks (place and destination)
-                        playerClicks.append(squareSelected)
-                    # after second click (at destination)
-                    if len(playerClicks) == 2 and humanTurn:
-                        # user generated a move
-                        move = Move(playerClicks[0], playerClicks[1], gs.board)
-                        for i in range(len(validMoves)):
-                            # check if the move is in the validMoves
-                            if move == validMoves[i]:
-                                # Check if a piece is captured at the destination square
-                                # print(gs.board[validMoves[i].endRow][validMoves[i].endCol])
-                                if gs.board[validMoves[i].endRow][validMoves[i].endCol] != '--':
-                                    pieceCaptured = True
-                                gs.makeMove(validMoves[i])
-                                if (move.isPawnPromotion):
-                                    # Show pawn promotion popup and get the selected piece
-                                    promotion_choice = pawnPromotionPopup(
-                                        screen, gs)
-                                    # Set the promoted piece on the board
-                                    gs.board[move.endRow][move.endCol] = move.pieceMoved[0] + \
-                                        promotion_choice
-                                    promote_sound.play()
-                                    pieceCaptured = False
-                                # add sound for human move
-                                if (pieceCaptured or move.isEnpassantMove):
-                                    # Play capture sound
-                                    capture_sound.play()
-                                    # print("capture sound")
-                                elif not move.isPawnPromotion:
-                                    # Play move sound
-                                    move_sound.play()
-                                    # print("move sound")
-                                pieceCaptured = False
-                                moveMade = True
-                                animate = True
-                                squareSelected = ()
-                                playerClicks = []
-                        if not moveMade:
-                            playerClicks = [squareSelected]
-
             # Key Handler
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # undo when z is pressed

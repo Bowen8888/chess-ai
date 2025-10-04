@@ -329,7 +329,8 @@ class GameState():
                 startRow = 1
                 enemyColor = 'w'
                 kingRow, kingCol = self.blackKinglocation
-
+        if (row + moveAmount > 7 or row + moveAmount < 0):
+            return 
         if self.board[row + moveAmount][col] == "--":  # first square move
             # if piece is not pinned then its fine or if it is pinned but from forward direction then we can still move
             if not piecePinned or pinDirection == (moveAmount, 0):

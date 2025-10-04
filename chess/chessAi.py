@@ -90,7 +90,7 @@ piecePositionScores = {"N": knightScores, "B": bishopScores, "Q": queenScores,
 
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 4
+DEPTH = 2
 SET_WHITE_AS_BOT = -1
 
 
@@ -99,6 +99,9 @@ def findRandomMoves(validMoves):
 
 
 def findBestMove(gs, validMoves, returnQueue):
+    returnQueue.put(returnBestMove(gs, validMoves))
+
+def returnBestMove(gs, validMoves):
     global nextMove, whitePawnScores, blackPawnScores
     nextMove = None
     random.shuffle(validMoves)
@@ -107,12 +110,22 @@ def findBestMove(gs, validMoves, returnQueue):
         # Swap the variables
         whitePawnScores, blackPawnScores = blackPawnScores, whitePawnScores
 
+
+    findMove(gs, validMoves)
+    return nextMove
+    
+
+def findMove(gs, validMoves):
     SET_WHITE_AS_BOT = 1 if gs.whiteToMove else -1
 
-    findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, -
+    # AI player
+    if gs.whiteToMove:
+        findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH, - CHECKMATE, CHECKMATE,  SET_WHITE_AS_BOT)
+    # AI challenger
+    else: 
+        findMoveNegaMaxAlphaBeta(gs, validMoves, DEPTH-1, -
                              CHECKMATE, CHECKMATE,  SET_WHITE_AS_BOT)
 
-    returnQueue.put(nextMove)
 
 
 # with alpha beta pruning
